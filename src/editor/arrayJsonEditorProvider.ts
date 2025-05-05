@@ -21,43 +21,103 @@ import { getNonce } from "../util/util";
  * - Backing up a custom editor.
  */
 export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<ArrayJsonDocument> {
-  private static newPawDrawFileId = 1;
-
+  /**
+   * Register the editor provider.
+   *
+   * @param context The extension context.
+   * @returns A disposable that unregisters the editor provider.
+   */
   public static register(context: vscode.ExtensionContext): vscode.Disposable {
-    vscode.commands.registerCommand("catCustoms.pawDraw.new", () => {
-      const workspaceFolders = vscode.workspace.workspaceFolders;
-      if (!workspaceFolders) {
-        vscode.window.showErrorMessage("Creating new Paw Draw files currently requires opening a workspace");
+    // 現在アクティブなファイルを開くコマンドを登録
+    vscode.commands.registerCommand("array-json-editor.openEditor", () => {
+      const activeEditor = vscode.window.activeTextEditor;
+      if (!activeEditor) {
+        vscode.window.showErrorMessage("array-json-editor: No active editor.");
         return;
       }
-
-      const uri = vscode.Uri.joinPath(workspaceFolders[0].uri, `new-${ArrayJsonEditorProvider.newPawDrawFileId++}.pawdraw`).with({ scheme: "untitled" });
-
+      const uri = activeEditor.document.uri;
       vscode.commands.executeCommand("vscode.openWith", uri, ArrayJsonEditorProvider.viewType);
     });
 
     return vscode.window.registerCustomEditorProvider(ArrayJsonEditorProvider.viewType, new ArrayJsonEditorProvider(context), {
-      // For this demo extension, we enable `retainContextWhenHidden` which keeps the
-      // webview alive even when it is not visible. You should avoid using this setting
-      // unless is absolutely required as it does have memory overhead.
-      webviewOptions: {
-        retainContextWhenHidden: true,
-      },
-      supportsMultipleEditorsPerDocument: false,
+      webviewOptions: {},
+      supportsMultipleEditorsPerDocument: false, // 同一ドキュメントに対して複数のエディタをサポートするかどうか
     });
   }
 
-  private static readonly viewType = "catCustoms.pawDraw";
+  // package.jsonのviewTypeと一致させる
+  private static readonly viewType = "array-json-editor.openEditor";
 
   /**
    * Tracks all known webviews
    */
   private readonly webviews = new WebviewCollection();
 
-  constructor(private readonly _context: vscode.ExtensionContext) {}
+  constructor(private readonly context: vscode.ExtensionContext) {}
 
   //#region CustomEditorProvider
 
+  /**
+   * Called when our custom editor is opened.
+   * 登録している拡張子のファイルを開いたときに呼ばれる
+   * コマンドで表示を行った場合もvscode.openWithで実行しているのでこちらが呼ばれる
+   *
+   */
+  public async resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, _token: vscode.CancellationToken): Promise<void> {
+    // Setup initial content for the webview
+    webviewPanel.webview.options = {
+      enableScripts: true,
+    };
+    webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
+
+    function updateWebview() {
+      webviewPanel.webview.postMessage({
+        type: "update",
+        text: document.getText(),
+      });
+    }
+
+    // Hook up event handlers so that we can synchronize the webview with the text document.
+    //
+    // The text document acts as our model, so we have to sync change in the document to our
+    // editor and sync changes in the editor back to the document.
+    //
+    // Remember that a single text document can also be shared between multiple custom
+    // editors (this happens for example when you split a custom editor)
+
+    const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument((e) => {
+      if (e.document.uri.toString() === document.uri.toString()) {
+        updateWebview();
+      }
+    });
+
+    // Make sure we get rid of the listener when our editor is closed.
+    webviewPanel.onDidDispose(() => {
+      changeDocumentSubscription.dispose();
+    });
+
+    // Receive message from the webview.
+    webviewPanel.webview.onDidReceiveMessage((e) => {
+      switch (e.type) {
+        case "add":
+          // this.addNewScratch(document);
+          return;
+
+        case "delete":
+          // this.deleteScratch(document, e.id);
+          return;
+      }
+    });
+
+    updateWebview();
+  }
+
+  /**
+   * @param uri
+   * @param openContext
+   * @param _token
+   * @returns
+   */
   async openCustomDocument(uri: vscode.Uri, openContext: { backupId?: string }, _token: vscode.CancellationToken): Promise<ArrayJsonDocument> {
     const document: ArrayJsonDocument = await ArrayJsonDocument.create(uri, openContext.backupId, {
       getFileData: async () => {
@@ -158,13 +218,13 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
    */
   private getHtmlForWebview(webview: vscode.Webview): string {
     // Local path to script and css for the webview
-    const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, "media", "pawDraw.js"));
+    // const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, "media", "pawDraw.js"));
 
-    const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, "media", "reset.css"));
+    // const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, "media", "reset.css"));
 
-    const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, "media", "vscode.css"));
+    // const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, "media", "vscode.css"));
 
-    const styleMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, "media", "pawDraw.css"));
+    // const styleMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, "media", "pawDraw.css"));
 
     // Use a nonce to whitelist which scripts can be run
     const nonce = getNonce();
@@ -178,29 +238,20 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
 				<!--
 				Use a content security policy to only allow loading images from https or from our extension directory,
 				and only allow scripts that have a specific nonce.
-				-->
+				
 				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} blob:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
-
+        -->
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-				<link href="${styleResetUri}" rel="stylesheet" />
-				<link href="${styleVSCodeUri}" rel="stylesheet" />
-				<link href="${styleMainUri}" rel="stylesheet" />
-
 				<title>Paw Draw</title>
 			</head>
 			<body>
 				<div class="drawing-canvas"></div>
 
 				<div class="drawing-controls">
-					<button data-color="black" class="black active" title="Black"></button>
-					<button data-color="white" class="white" title="White"></button>
-					<button data-color="red" class="red" title="Red"></button>
-					<button data-color="green" class="green" title="Green"></button>
-					<button data-color="blue" class="blue" title="Blue"></button>
+          <p>テスト</p>
 				</div>
 
-				<script nonce="${nonce}" src="${scriptUri}"></script>
+				<!--<script nonce="${nonce}" src="{scriptUri}"></script>-->
 			</body>
 			</html>`;
   }
@@ -231,5 +282,65 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
         return;
       }
     }
+  }
+
+  /**
+   * Add a new scratch to the current document.
+   */
+  private addNewScratch(_document: vscode.TextDocument) {
+    // const json = this.getDocumentAsJson(document);
+    // const character = CatScratchEditorProvider.scratchCharacters[Math.floor(Math.random() * CatScratchEditorProvider.scratchCharacters.length)];
+    // json.scratches = [
+    //   ...(Array.isArray(json.scratches) ? json.scratches : []),
+    //   {
+    //     id: getNonce(),
+    //     text: character,
+    //     created: Date.now(),
+    //   },
+    // ];
+    // return this.updateTextDocument(document, json);
+  }
+
+  /**
+   * Delete an existing scratch from a document.
+   */
+  private deleteScratch(document: vscode.TextDocument, id: string) {
+    const json = this.getDocumentAsJson(document);
+    if (!Array.isArray(json.scratches)) {
+      return;
+    }
+
+    json.scratches = json.scratches.filter((note: any) => note.id !== id);
+
+    return this.updateTextDocument(document, json);
+  }
+
+  /**
+   * Try to get a current document as json text.
+   */
+  private getDocumentAsJson(document: vscode.TextDocument): any {
+    const text = document.getText();
+    if (text.trim().length === 0) {
+      return {};
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error("Could not get document as json. Content is not valid json");
+    }
+  }
+
+  /**
+   * Write out the json to a given document.
+   */
+  private updateTextDocument(document: vscode.TextDocument, json: any) {
+    const edit = new vscode.WorkspaceEdit();
+
+    // Just replace the entire document every time for this example extension.
+    // A more complete extension should compute minimal edits instead.
+    edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), JSON.stringify(json, null, 2));
+
+    return vscode.workspace.applyEdit(edit);
   }
 }

@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
-import { Disposable, disposeAll } from "../util/dispose";
-import { getNonce } from "../util/util";
+import { Disposable } from "../util/dispose";
 
 /**
  * Define the type of edits used in paw draw files.

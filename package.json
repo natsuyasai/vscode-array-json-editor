@@ -12,10 +12,25 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "customEditors": [
+      {
+        "viewType": "array-json-editor.openEditor",
+        "displayName": "Open Array JSON Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.array.json"
+          }
+        ]
+      }
+    ],
     "commands": [
       {
         "command": "array-json-editor.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "array-json-editor.openEditor",
+        "title": "Open Array JSON Editor"
       }
     ]
   },
