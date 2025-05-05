@@ -4,6 +4,8 @@ import { ArrayJsonDocument, ArrayJsonEdit } from "./arrayJsonDocument";
 import { WebviewCollection } from "./webviewCollection";
 import { disposeAll } from "../util/dispose";
 import { getNonce } from "../util/util";
+import { Uri } from "vscode";
+import { getUri } from "../util/getUri";
 
 /**
  * Provider for paw draw editors.
@@ -39,10 +41,14 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
       vscode.commands.executeCommand("vscode.openWith", uri, ArrayJsonEditorProvider.viewType);
     });
 
-    return vscode.window.registerCustomEditorProvider(ArrayJsonEditorProvider.viewType, new ArrayJsonEditorProvider(context), {
-      webviewOptions: {},
-      supportsMultipleEditorsPerDocument: false, // 同一ドキュメントに対して複数のエディタをサポートするかどうか
-    });
+    return vscode.window.registerCustomEditorProvider(
+      ArrayJsonEditorProvider.viewType,
+      new ArrayJsonEditorProvider(context),
+      {
+        webviewOptions: {},
+        supportsMultipleEditorsPerDocument: false, // 同一ドキュメントに対して複数のエディタをサポートするかどうか
+      }
+    );
   }
 
   // package.jsonのviewTypeと一致させる
@@ -63,7 +69,11 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
    * コマンドで表示を行った場合もvscode.openWithで実行しているのでこちらが呼ばれる
    *
    */
-  public async resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, _token: vscode.CancellationToken): Promise<void> {
+  public async resolveCustomTextEditor(
+    document: vscode.TextDocument,
+    webviewPanel: vscode.WebviewPanel,
+    _token: vscode.CancellationToken
+  ): Promise<void> {
     // Setup initial content for the webview
     webviewPanel.webview.options = {
       enableScripts: true,
@@ -118,7 +128,11 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
    * @param _token
    * @returns
    */
-  async openCustomDocument(uri: vscode.Uri, openContext: { backupId?: string }, _token: vscode.CancellationToken): Promise<ArrayJsonDocument> {
+  async openCustomDocument(
+    uri: vscode.Uri,
+    openContext: { backupId?: string },
+    _token: vscode.CancellationToken
+  ): Promise<ArrayJsonDocument> {
     const document: ArrayJsonDocument = await ArrayJsonDocument.create(uri, openContext.backupId, {
       getFileData: async () => {
         const webviewsForDocument = Array.from(this.webviews.get(document.uri));
@@ -160,7 +174,11 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
     return document;
   }
 
-  async resolveCustomEditor(document: ArrayJsonDocument, webviewPanel: vscode.WebviewPanel, _token: vscode.CancellationToken): Promise<void> {
+  async resolveCustomEditor(
+    document: ArrayJsonDocument,
+    webviewPanel: vscode.WebviewPanel,
+    _token: vscode.CancellationToken
+  ): Promise<void> {
     // Add the webview to our internal set of active webviews
     this.webviews.add(document.uri, webviewPanel);
 
@@ -192,22 +210,38 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
     });
   }
 
-  private readonly _onDidChangeCustomDocument = new vscode.EventEmitter<vscode.CustomDocumentEditEvent<ArrayJsonDocument>>();
+  private readonly _onDidChangeCustomDocument = new vscode.EventEmitter<
+    vscode.CustomDocumentEditEvent<ArrayJsonDocument>
+  >();
   public readonly onDidChangeCustomDocument = this._onDidChangeCustomDocument.event;
 
-  public saveCustomDocument(document: ArrayJsonDocument, cancellation: vscode.CancellationToken): Thenable<void> {
+  public saveCustomDocument(
+    document: ArrayJsonDocument,
+    cancellation: vscode.CancellationToken
+  ): Thenable<void> {
     return document.save(cancellation);
   }
 
-  public saveCustomDocumentAs(document: ArrayJsonDocument, destination: vscode.Uri, cancellation: vscode.CancellationToken): Thenable<void> {
+  public saveCustomDocumentAs(
+    document: ArrayJsonDocument,
+    destination: vscode.Uri,
+    cancellation: vscode.CancellationToken
+  ): Thenable<void> {
     return document.saveAs(destination, cancellation);
   }
 
-  public revertCustomDocument(document: ArrayJsonDocument, cancellation: vscode.CancellationToken): Thenable<void> {
+  public revertCustomDocument(
+    document: ArrayJsonDocument,
+    cancellation: vscode.CancellationToken
+  ): Thenable<void> {
     return document.revert(cancellation);
   }
 
-  public backupCustomDocument(document: ArrayJsonDocument, context: vscode.CustomDocumentBackupContext, cancellation: vscode.CancellationToken): Thenable<vscode.CustomDocumentBackup> {
+  public backupCustomDocument(
+    document: ArrayJsonDocument,
+    context: vscode.CustomDocumentBackupContext,
+    cancellation: vscode.CancellationToken
+  ): Thenable<vscode.CustomDocumentBackup> {
     return document.backup(context.destination, cancellation);
   }
 
@@ -217,49 +251,40 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
    * Get the static HTML used for in our editor's webviews.
    */
   private getHtmlForWebview(webview: vscode.Webview): string {
-    // Local path to script and css for the webview
-    // const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, "media", "pawDraw.js"));
-
-    // const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, "media", "reset.css"));
-
-    // const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, "media", "vscode.css"));
-
-    // const styleMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this._context.extensionUri, "media", "pawDraw.css"));
+    const extensionUri = this.context.extensionUri;
+    // The CSS file from the React build output
+    const stylesUri = getUri(webview, extensionUri, ["webview-ui", "build", "assets", "index.css"]);
+    // The JS file from the React build output
+    const scriptUri = getUri(webview, extensionUri, ["webview-ui", "build", "assets", "index.js"]);
 
     // Use a nonce to whitelist which scripts can be run
     const nonce = getNonce();
-
-    return /* html */ `
-			<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
-
-				<!--
-				Use a content security policy to only allow loading images from https or from our extension directory,
-				and only allow scripts that have a specific nonce.
-				
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} blob:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
-        -->
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<title>Paw Draw</title>
-			</head>
-			<body>
-				<div class="drawing-canvas"></div>
-
-				<div class="drawing-controls">
-          <p>テスト</p>
-				</div>
-
-				<!--<script nonce="${nonce}" src="{scriptUri}"></script>-->
-			</body>
-			</html>`;
+    return /*html*/ `
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+          <link rel="stylesheet" type="text/css" href="${stylesUri}">
+          <title>Hello World</title>
+        </head>
+        <body>
+          <div id="root"></div>
+          <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
+        </body>
+      </html>
+    `;
   }
 
   private _requestId = 1;
   private readonly _callbacks = new Map<number, (response: any) => void>();
 
-  private postMessageWithResponse<R = unknown>(panel: vscode.WebviewPanel, type: string, body: any): Promise<R> {
+  private postMessageWithResponse<R = unknown>(
+    panel: vscode.WebviewPanel,
+    type: string,
+    body: any
+  ): Promise<R> {
     const requestId = this._requestId++;
     const p = new Promise<R>((resolve) => this._callbacks.set(requestId, resolve));
     panel.webview.postMessage({ type, requestId, body });
@@ -339,7 +364,11 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
 
     // Just replace the entire document every time for this example extension.
     // A more complete extension should compute minimal edits instead.
-    edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), JSON.stringify(json, null, 2));
+    edit.replace(
+      document.uri,
+      new vscode.Range(0, 0, document.lineCount, 0),
+      JSON.stringify(json, null, 2)
+    );
 
     return vscode.workspace.applyEdit(edit);
   }
