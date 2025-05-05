@@ -41,9 +41,10 @@ function App() {
     switch (message.type) {
       case "init":
       case "update":
-        console.log(message.text); // Handle the message from the extension
-        setJsonText(message.text);
-        setJsonObject(JSON.parse(message.text));
+        const updateMessage = message as UpdateMessage;
+        console.log(updateMessage.payload); // Handle the message from the extension
+        setJsonText(updateMessage.payload);
+        setJsonObject(JSON.parse(updateMessage.payload));
         break;
       default:
         console.log("Unknown command: " + message.command);
@@ -54,7 +55,7 @@ function App() {
   function handleSave() {
     vscode.postMessage({
       type: "save",
-      payload: jsonText,
+      payload: JSON.stringify(jsonObject, null, 2),
     });
   }
 
