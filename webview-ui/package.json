@@ -1,10 +1,11 @@
 {
-  "name": "hello-world",
+  "name": "webview-ui",
   "version": "0.0.1",
   "private": true,
   "scripts": {
     "start": "vite",
     "build": "tsc && vite build",
+    "build:debug:watch": "tsc && vite build --sourcemap 'inline' --minify false --mode 'development' --watch",
     "preview": "vite preview"
   },
   "dependencies": {
