@@ -5,7 +5,7 @@
   "scripts": {
     "start": "vite",
     "build": "tsc && vite build",
-    "build:debug:watch": "tsc && vite build --sourcemap 'inline' --minify false --mode 'development' --watch",
+    "build:debug:watch": "tsc && vite build --sourcemap \"inline\" --minify false --mode \"development\" --watch",
     "preview": "vite preview"
   },
   "dependencies": {
