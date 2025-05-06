@@ -1,7 +1,8 @@
 import { FC, useEffect, useState } from "react";
 import styles from "./EditableTableRoot.module.scss";
-import { JsonRecords, useJsonToObject } from "@/hooks/useJsonToObject";
+import { JsonRecords, useJsonToViewObject } from "@/hooks/useJsonToViewObject";
 import { EditableTable } from "./EditableTable";
+import { useViewObjectToJson } from "@/hooks/useViewObjectToJson";
 
 interface Props {
   jsonObject: Record<string, any>;
@@ -11,7 +12,7 @@ interface Props {
 export const EditableTableRoot: FC<Props> = ({ jsonObject, setJsonObject }) => {
   const [displayObjects, setDisplayObjects] = useState<Record<string, JsonRecords>>({});
   useEffect(() => {
-    const dispObject = useJsonToObject(jsonObject);
+    const dispObject = useJsonToViewObject(jsonObject);
     setDisplayObjects(dispObject);
   }, [jsonObject]);
 
@@ -19,33 +20,7 @@ export const EditableTableRoot: FC<Props> = ({ jsonObject, setJsonObject }) => {
     const newDisplayObjects = { ...displayObjects };
     newDisplayObjects[key] = tableItems;
     setDisplayObjects(newDisplayObjects);
-    const newJsonObject = { ...jsonObject };
-    // TODO 逆変換を別関数に切り出してテスト作成
-    if (tableItems.type === "array") {
-      newJsonObject[key] = tableItems.record.map((item) => {
-        const newItem: Record<string, any> = {};
-        Object.keys(item).forEach((itemKey) => {
-          newItem[itemKey] = item[itemKey].value;
-        });
-        return newItem;
-      });
-    } else if (tableItems.type === "object") {
-      newJsonObject[key] = tableItems.record.map((item) => {
-        const newItem: Record<string, any> = {};
-        Object.keys(item).forEach((itemKey) => {
-          newItem[itemKey] = item[itemKey].value;
-        });
-        return newItem;
-      })[0];
-    } else {
-      newJsonObject[key] = tableItems.record.map((item) => {
-        let newItem = null;
-        Object.keys(item).forEach((itemKey) => {
-          newItem = item[itemKey].value;
-        });
-        return newItem;
-      })[0];
-    }
+    const newJsonObject = useViewObjectToJson(jsonObject, tableItems, key);
     setJsonObject(newJsonObject);
   }
   return (

@@ -15,7 +15,7 @@ export interface JsonRecords {
     | "function";
   record: Record<string, JsonObject>[];
 }
-export function useJsonToObject(jsonObject: Record<string, any>) {
+export function useJsonToViewObject(jsonObject: Record<string, any>) {
   const objects: Record<string, JsonRecords> = {};
 
   function createObjectFromJsonObject() {

@@ -9,7 +9,7 @@ import {
   VscodeTableCell,
   VscodeTextarea,
 } from "@vscode-elements/react-elements";
-import { JsonRecords } from "@/hooks/useJsonToObject";
+import { JsonRecords } from "@/hooks/useJsonToViewObject";
 
 interface Props {
   tableTitle: string;
