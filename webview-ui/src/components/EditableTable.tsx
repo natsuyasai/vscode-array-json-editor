@@ -7,15 +7,27 @@ import {
   VscodeTableBody,
   VscodeTableRow,
   VscodeTableCell,
+  VscodeTextarea,
 } from "@vscode-elements/react-elements";
 
 interface Props {
   tableTitle: string;
   tableItems: Record<string, any>[];
-  setTableItems: (jsonObject: Record<string, any>) => void;
+  setTableItems: (jsonObject: Record<string, any>[]) => void;
 }
 
 export const EditableTable: FC<Props> = ({ tableTitle, tableItems, setTableItems }) => {
+  function handleInput(event: Event) {
+    console.log(event);
+  }
+  function handleUpdated(event: Event, rowIndex: number, cellIndex: number) {
+    const target = event.target as HTMLTextAreaElement;
+    const newValue = target.value;
+    const updatedTableItems = [...tableItems];
+    updatedTableItems[rowIndex][cellIndex] = newValue;
+    setTableItems(updatedTableItems);
+  }
+
   return (
     <>
       <div key={tableTitle}>
@@ -32,11 +44,18 @@ export const EditableTable: FC<Props> = ({ tableTitle, tableItems, setTableItems
               })}
             </VscodeTableHeader>
             <VscodeTableBody slot="body">
-              {tableItems.map((row, index) => (
-                <VscodeTableRow key={index}>
+              {tableItems.map((row, rowIndex) => (
+                <VscodeTableRow key={rowIndex}>
                   {Object.values(row).map((cell, cellIndex) => (
                     <VscodeTableCell key={cellIndex} className={styles.cell}>
-                      {cell}
+                      <VscodeTextarea
+                        className={styles.textArea}
+                        resize="both"
+                        value={cell}
+                        onInput={handleInput}
+                        onChange={(e) => {
+                          handleUpdated(e, rowIndex, cellIndex);
+                        }}></VscodeTextarea>
                     </VscodeTableCell>
                   ))}
                 </VscodeTableRow>

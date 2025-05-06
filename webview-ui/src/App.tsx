@@ -43,7 +43,6 @@ function App() {
       case "init":
       case "update":
         const updateMessage = message as UpdateMessage;
-        console.log(updateMessage.payload); // Handle the message from the extension
         setJsonText(updateMessage.payload);
         setJsonObject(JSON.parse(updateMessage.payload));
         break;
