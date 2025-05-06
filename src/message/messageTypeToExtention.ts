@@ -1,4 +1,4 @@
-export type MessageType = "init" | "update" | "reload" | "save";
+export type MessageType = "update" | "reload" | "save";
 
 export interface Message {
   type: MessageType;

@@ -2,7 +2,7 @@ import { vscode } from "./utilities/vscode";
 import { VscodeButton } from "@vscode-elements/react-elements";
 import "./App.css";
 import { useCallback, useEffect, useState } from "react";
-import { UpdateMessage, Message, ReloadMessage } from "../../src/message/messageType";
+import { UpdateMessage, Message } from "../../src/message/messageTypeToWebview";
 
 function App() {
   const [jsonText, setJsonText] = useState("");

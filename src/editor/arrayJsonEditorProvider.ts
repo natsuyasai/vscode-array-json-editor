@@ -1,12 +1,12 @@
 // WebViewの内容を表示するためのクラス
 import * as vscode from "vscode";
-// import { ArrayJsonDocument, ArrayJsonEdit } from "./arrayJsonDocument";
-import { WebviewCollection } from "./webviewCollection";
-import { disposeAll } from "../util/dispose";
-import { getNonce } from "../util/util";
-import { Uri } from "vscode";
+import {
+  MessageType as MessageTypeToWebview,
+  UpdateMessage,
+} from "../message/messageTypeToWebview";
+import { MessageType as MessageTypeFromWebview } from "../message/messageTypeToExtention";
 import { getUri } from "../util/getUri";
-import { Message, MessageType, UpdateMessage } from "../message/messageType";
+import { getNonce } from "../util/util";
 
 /**
  * Provider for paw draw editors.
@@ -98,7 +98,7 @@ export class ArrayJsonEditorProvider implements vscode.CustomTextEditorProvider 
     const webviewReceiveMessageSubscription = webviewPanel.webview.onDidReceiveMessage(
       async (e) => {
         console.log(`${e.type}:${e.payload}`);
-        switch (e.type as MessageType) {
+        switch (e.type as MessageTypeFromWebview) {
           case "update":
             this.updateTextDocument(document, e.payload);
             return;
