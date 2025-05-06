@@ -18,6 +18,9 @@
 			"@message/*": [
 				"./src/message/*"
 			],
+			"@util/*": [
+				"./src/util/*"
+			],
 			"@/*": [
 				"./src/*"
 			]
