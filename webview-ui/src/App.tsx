@@ -4,6 +4,7 @@ import styles from "./App.module.scss";
 import { useCallback, useEffect, useState } from "react";
 import { UpdateMessage, Message } from "@message/messageTypeToWebview";
 import { EditableTableRoot } from "./components/EditableTableRoot";
+import { debounce } from "./utilities/debounce";
 
 function App() {
   const [jsonText, setJsonText] = useState("");
@@ -36,6 +37,10 @@ function App() {
   };
 
   window.addEventListener("message", (event) => {
+    debouncedOnReceiveMessage(event);
+  });
+
+  function onReceiveMessage(event: MessageEvent) {
     const message = event.data; // The JSON data that the extension sent
     console.log("Received message from extension:", message);
 
@@ -43,14 +48,21 @@ function App() {
       case "init":
       case "update":
         const updateMessage = message as UpdateMessage;
-        setJsonText(updateMessage.payload);
-        setJsonObject(JSON.parse(updateMessage.payload));
+        debounce(() => {
+          updateJsonFromExtension(updateMessage.payload);
+        })();
         break;
       default:
         console.log("Unknown command: " + message.command);
         break;
     }
-  });
+  }
+  const debouncedOnReceiveMessage = debounce(onReceiveMessage);
+
+  function updateJsonFromExtension(newJsonText: string) {
+    setJsonText(newJsonText);
+    setJsonObject(JSON.parse(newJsonText));
+  }
 
   function handleApply() {
     vscode.postMessage({
