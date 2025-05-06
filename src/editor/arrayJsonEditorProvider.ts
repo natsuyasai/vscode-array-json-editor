@@ -5,21 +5,6 @@ import { MessageType as MessageTypeFromWebview } from "@message/messageTypeToExt
 import { getUri } from "@util/getUri";
 import { getNonce } from "@util/util";
 
-/**
- * Provider for paw draw editors.
- *
- * Paw draw editors are used for `.pawDraw` files, which are just `.png` files with a different file extension.
- *
- * This provider demonstrates:
- *
- * - How to implement a custom editor for binary files.
- * - Setting up the initial webview for a custom editor.
- * - Loading scripts and styles in a custom editor.
- * - Communication between VS Code and the custom editor.
- * - Using CustomDocuments to store information that is shared between multiple custom editors.
- * - Implementing save, undo, redo, and revert.
- * - Backing up a custom editor.
- */
 export class ArrayJsonEditorProvider implements vscode.CustomTextEditorProvider {
   /**
    * Register the editor provider.
