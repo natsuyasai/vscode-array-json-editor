@@ -59,9 +59,16 @@ function App() {
     });
   }
 
+  function updateJsonObject(newJsonObject: Record<string, any>) {
+    setJsonObject(newJsonObject);
+    setJsonText(JSON.stringify(newJsonObject, null, 2));
+  }
+
   return (
     <main className={styles.main}>
-      <EditableTableRoot jsonObject={jsonObject} setJsonObject={() => {}}></EditableTableRoot>
+      <EditableTableRoot
+        jsonObject={jsonObject}
+        setJsonObject={updateJsonObject}></EditableTableRoot>
       <VscodeDivider className={styles.divider} />
       <VscodeButton onClick={handleSave}>Save</VscodeButton>
     </main>

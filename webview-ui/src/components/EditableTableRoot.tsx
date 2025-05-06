@@ -20,15 +20,32 @@ export const EditableTableRoot: FC<Props> = ({ jsonObject, setJsonObject }) => {
     newDisplayObjects[key] = tableItems;
     setDisplayObjects(newDisplayObjects);
     const newJsonObject = { ...jsonObject };
-    newJsonObject[key] = tableItems.record.map((item) => {
-      const newItem: Record<string, any> = {};
-      Object.keys(item).forEach((itemKey) => {
-        newItem[itemKey] = item[itemKey].value;
+    // TODO 逆変換を別関数に切り出してテスト作成
+    if (tableItems.type === "array") {
+      newJsonObject[key] = tableItems.record.map((item) => {
+        const newItem: Record<string, any> = {};
+        Object.keys(item).forEach((itemKey) => {
+          newItem[itemKey] = item[itemKey].value;
+        });
+        return newItem;
       });
-      return newItem;
-    });
-    console.log(jsonObject);
-    console.log(newJsonObject);
+    } else if (tableItems.type === "object") {
+      newJsonObject[key] = tableItems.record.map((item) => {
+        const newItem: Record<string, any> = {};
+        Object.keys(item).forEach((itemKey) => {
+          newItem[itemKey] = item[itemKey].value;
+        });
+        return newItem;
+      })[0];
+    } else {
+      newJsonObject[key] = tableItems.record.map((item) => {
+        let newItem = null;
+        Object.keys(item).forEach((itemKey) => {
+          newItem = item[itemKey].value;
+        });
+        return newItem;
+      })[0];
+    }
     setJsonObject(newJsonObject);
   }
   return (
