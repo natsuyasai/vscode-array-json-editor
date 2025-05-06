@@ -55,11 +55,6 @@ export class ArrayJsonEditorProvider implements vscode.CustomTextEditorProvider 
   // package.jsonのviewTypeと一致させる
   private static readonly viewType = "array-json-editor.openEditor";
 
-  /**
-   * Tracks all known webviews
-   */
-  private readonly webviews = new WebviewCollection();
-
   constructor(private readonly context: vscode.ExtensionContext) {}
 
   /**
@@ -92,12 +87,7 @@ export class ArrayJsonEditorProvider implements vscode.CustomTextEditorProvider 
       }
     });
 
-    // Make sure we get rid of the listener when our editor is closed.
-    webviewPanel.onDidDispose(() => {
-      changeDocumentSubscription.dispose();
-    });
-
-    webviewPanel.onDidChangeViewState((e) => {
+    const changeViewStateSubscription = webviewPanel.onDidChangeViewState((e) => {
       if (e.webviewPanel.visible) {
         // The webview is visible, so we can update it with the current document content.
         updateWebview();
@@ -105,17 +95,28 @@ export class ArrayJsonEditorProvider implements vscode.CustomTextEditorProvider 
     });
 
     // Receive message from the webview.
-    webviewPanel.webview.onDidReceiveMessage(async (e) => {
-      switch (e.type as MessageType) {
-        case "update":
-          return;
-        case "save":
-          console.log("save", e.payload);
-          this.updateTextDocument(document, e.payload);
-          return;
-        case "reload":
-          return;
+    const webviewReceiveMessageSubscription = webviewPanel.webview.onDidReceiveMessage(
+      async (e) => {
+        console.log(`${e.type}:${e.payload}`);
+        switch (e.type as MessageType) {
+          case "update":
+            this.updateTextDocument(document, e.payload);
+            return;
+          case "save":
+            this.updateTextDocument(document, e.payload);
+            return;
+          case "reload":
+            updateWebview();
+            return;
+        }
       }
+    );
+
+    // Make sure we get rid of the listener when our editor is closed.
+    webviewPanel.onDidDispose(() => {
+      changeDocumentSubscription.dispose();
+      changeViewStateSubscription.dispose();
+      webviewReceiveMessageSubscription.dispose();
     });
 
     updateWebview();
@@ -141,7 +142,7 @@ export class ArrayJsonEditorProvider implements vscode.CustomTextEditorProvider 
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
           <link rel="stylesheet" type="text/css" href="${stylesUri}">
-          <title>Hello World</title>
+          <title>ArrayJsonEditor</title>
         </head>
         <body>
           <div id="root"></div>
