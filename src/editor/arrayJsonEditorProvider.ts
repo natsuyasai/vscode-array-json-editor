@@ -1,6 +1,6 @@
 // WebViewの内容を表示するためのクラス
 import * as vscode from "vscode";
-import { ArrayJsonDocument, ArrayJsonEdit } from "./arrayJsonDocument";
+// import { ArrayJsonDocument, ArrayJsonEdit } from "./arrayJsonDocument";
 import { WebviewCollection } from "./webviewCollection";
 import { disposeAll } from "../util/dispose";
 import { getNonce } from "../util/util";
@@ -23,7 +23,7 @@ import { Message, MessageType, UpdateMessage } from "../message/messageType";
  * - Implementing save, undo, redo, and revert.
  * - Backing up a custom editor.
  */
-export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<ArrayJsonDocument> {
+export class ArrayJsonEditorProvider implements vscode.CustomTextEditorProvider {
   /**
    * Register the editor provider.
    *
@@ -62,8 +62,6 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
 
   constructor(private readonly context: vscode.ExtensionContext) {}
 
-  //#region CustomEditorProvider
-
   /**
    * Called when our custom editor is opened.
    * 登録している拡張子のファイルを開いたときに呼ばれる
@@ -73,7 +71,7 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
   public async resolveCustomTextEditor(
     document: vscode.TextDocument,
     webviewPanel: vscode.WebviewPanel,
-    token: vscode.CancellationToken
+    _token: vscode.CancellationToken
   ): Promise<void> {
     // Setup initial content for the webview
     webviewPanel.webview.options = {
@@ -99,6 +97,13 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
       changeDocumentSubscription.dispose();
     });
 
+    webviewPanel.onDidChangeViewState((e) => {
+      if (e.webviewPanel.visible) {
+        // The webview is visible, so we can update it with the current document content.
+        updateWebview();
+      }
+    });
+
     // Receive message from the webview.
     webviewPanel.webview.onDidReceiveMessage(async (e) => {
       switch (e.type as MessageType) {
@@ -106,7 +111,7 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
           return;
         case "save":
           console.log("save", e.payload);
-          await vscode.workspace.fs.writeFile(document.uri, Buffer.from(e.payload, "utf-8"));
+          this.updateTextDocument(document, e.payload);
           return;
         case "reload":
           return;
@@ -115,131 +120,6 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
 
     updateWebview();
   }
-
-  /**
-   * @param uri
-   * @param openContext
-   * @param _token
-   * @returns
-   */
-  async openCustomDocument(
-    uri: vscode.Uri,
-    openContext: { backupId?: string },
-    _token: vscode.CancellationToken
-  ): Promise<ArrayJsonDocument> {
-    const document: ArrayJsonDocument = await ArrayJsonDocument.create(uri, openContext.backupId, {
-      getFileData: async () => {
-        const webviewsForDocument = Array.from(this.webviews.get(document.uri));
-        if (!webviewsForDocument.length) {
-          throw new Error("Could not find webview to save for");
-        }
-        const panel = webviewsForDocument[0];
-        const response = await this.postMessageWithResponse<number[]>(panel, "getFileData", {});
-        return new Uint8Array(response);
-      },
-    });
-
-    const listeners: vscode.Disposable[] = [];
-
-    listeners.push(
-      document.onDidChange((e) => {
-        // Tell VS Code that the document has been edited by the use.
-        this._onDidChangeCustomDocument.fire({
-          document,
-          ...e,
-        });
-      })
-    );
-
-    listeners.push(
-      document.onDidChangeContent((e) => {
-        // Update all webviews when the document changes
-        for (const webviewPanel of this.webviews.get(document.uri)) {
-          this.postMessage(webviewPanel, "update", {
-            edits: e.edits,
-            content: e.content,
-          });
-        }
-      })
-    );
-
-    document.onDidDispose(() => disposeAll(listeners));
-
-    return document;
-  }
-
-  async resolveCustomEditor(
-    document: ArrayJsonDocument,
-    webviewPanel: vscode.WebviewPanel,
-    _token: vscode.CancellationToken
-  ): Promise<void> {
-    // Add the webview to our internal set of active webviews
-    this.webviews.add(document.uri, webviewPanel);
-
-    // Setup initial content for the webview
-    webviewPanel.webview.options = {
-      enableScripts: true,
-    };
-    webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
-
-    webviewPanel.webview.onDidReceiveMessage((e) => this.onMessage(document, e));
-
-    // Wait for the webview to be properly ready before we init
-    webviewPanel.webview.onDidReceiveMessage((e) => {
-      if (e.type === "ready") {
-        if (document.uri.scheme === "untitled") {
-          this.postMessage(webviewPanel, "init", {
-            untitled: true,
-            editable: true,
-          });
-        } else {
-          const editable = vscode.workspace.fs.isWritableFileSystem(document.uri.scheme);
-
-          this.postMessage(webviewPanel, "init", {
-            value: document.documentData,
-            editable,
-          });
-        }
-      }
-    });
-  }
-
-  private readonly _onDidChangeCustomDocument = new vscode.EventEmitter<
-    vscode.CustomDocumentEditEvent<ArrayJsonDocument>
-  >();
-  public readonly onDidChangeCustomDocument = this._onDidChangeCustomDocument.event;
-
-  public saveCustomDocument(
-    document: ArrayJsonDocument,
-    cancellation: vscode.CancellationToken
-  ): Thenable<void> {
-    return document.save(cancellation);
-  }
-
-  public saveCustomDocumentAs(
-    document: ArrayJsonDocument,
-    destination: vscode.Uri,
-    cancellation: vscode.CancellationToken
-  ): Thenable<void> {
-    return document.saveAs(destination, cancellation);
-  }
-
-  public revertCustomDocument(
-    document: ArrayJsonDocument,
-    cancellation: vscode.CancellationToken
-  ): Thenable<void> {
-    return document.revert(cancellation);
-  }
-
-  public backupCustomDocument(
-    document: ArrayJsonDocument,
-    context: vscode.CustomDocumentBackupContext,
-    cancellation: vscode.CancellationToken
-  ): Thenable<vscode.CustomDocumentBackup> {
-    return document.backup(context.destination, cancellation);
-  }
-
-  //#endregion
 
   /**
    * Get the static HTML used for in our editor's webviews.
@@ -271,35 +151,13 @@ export class ArrayJsonEditorProvider implements vscode.CustomEditorProvider<Arra
     `;
   }
 
-  private _requestId = 1;
-  private readonly _callbacks = new Map<number, (response: any) => void>();
+  private updateTextDocument(document: vscode.TextDocument, jsonString: string) {
+    const edit = new vscode.WorkspaceEdit();
 
-  private postMessageWithResponse<R = unknown>(
-    panel: vscode.WebviewPanel,
-    type: string,
-    body: any
-  ): Promise<R> {
-    const requestId = this._requestId++;
-    const p = new Promise<R>((resolve) => this._callbacks.set(requestId, resolve));
-    panel.webview.postMessage({ type, requestId, body });
-    return p;
-  }
+    // Just replace the entire document every time for this example extension.
+    // A more complete extension should compute minimal edits instead.
+    edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), jsonString);
 
-  private postMessage(panel: vscode.WebviewPanel, type: string, body: any): void {
-    panel.webview.postMessage({ type, body });
-  }
-
-  private onMessage(document: ArrayJsonDocument, message: any) {
-    switch (message.type) {
-      case "stroke":
-        document.makeEdit(message as ArrayJsonEdit);
-        return;
-
-      case "response": {
-        const callback = this._callbacks.get(message.requestId);
-        callback?.(message.body);
-        return;
-      }
-    }
+    return vscode.workspace.applyEdit(edit);
   }
 }
