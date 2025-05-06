@@ -1,8 +1,9 @@
 import { vscode } from "./utilities/vscode";
-import { VscodeButton } from "@vscode-elements/react-elements";
+import { VscodeButton, VscodeDivider } from "@vscode-elements/react-elements";
 import styles from "./App.module.scss";
 import { useCallback, useEffect, useState } from "react";
 import { UpdateMessage, Message } from "@message/messageTypeToWebview";
+import { EditTable } from "./components/EditTable";
 
 function App() {
   const [jsonText, setJsonText] = useState("");
@@ -61,7 +62,8 @@ function App() {
 
   return (
     <main className={styles.main}>
-      <p>{jsonText}</p>
+      <EditTable jsonObject={jsonObject} setJsonObject={() => {}}></EditTable>
+      <VscodeDivider className={styles.divider} />
       <VscodeButton onClick={handleSave}>Save</VscodeButton>
     </main>
   );
