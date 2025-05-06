@@ -38,7 +38,9 @@ export const EditableTable: FC<Props> = ({ tableTitle, tableItems, setTableItems
             <VscodeTableHeader slot="header">
               {Object.keys(tableItems.record[0]).map((headerKey) => {
                 return (
-                  <VscodeTableHeaderCell key={headerKey} className={styles.cell}>
+                  <VscodeTableHeaderCell
+                    key={headerKey}
+                    className={[styles.cell, styles.headerCell].join(" ")}>
                     {headerKey}
                   </VscodeTableHeaderCell>
                 );
