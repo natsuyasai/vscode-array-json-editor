@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Disposable } from "../util/dispose";
+import { Disposable } from "@/util/dispose";
 
 /**
  * Define the type of edits used in paw draw files.
@@ -17,7 +17,11 @@ export interface ArrayJsonDocumentDelegate {
  * Define the document (the data model) used for paw draw files.
  */
 export class ArrayJsonDocument extends Disposable implements vscode.CustomDocument {
-  static async create(uri: vscode.Uri, backupId: string | undefined, delegate: ArrayJsonDocumentDelegate): Promise<ArrayJsonDocument | PromiseLike<ArrayJsonDocument>> {
+  static async create(
+    uri: vscode.Uri,
+    backupId: string | undefined,
+    delegate: ArrayJsonDocumentDelegate
+  ): Promise<ArrayJsonDocument | PromiseLike<ArrayJsonDocument>> {
     // If we have a backup, read that. Otherwise read the resource from the workspace
     const dataFile = typeof backupId === "string" ? vscode.Uri.parse(backupId) : uri;
     const fileData = await ArrayJsonDocument.readFile(dataFile);
@@ -39,7 +43,11 @@ export class ArrayJsonDocument extends Disposable implements vscode.CustomDocume
 
   private readonly _delegate: ArrayJsonDocumentDelegate;
 
-  private constructor(uri: vscode.Uri, initialContent: Uint8Array, delegate: ArrayJsonDocumentDelegate) {
+  private constructor(
+    uri: vscode.Uri,
+    initialContent: Uint8Array,
+    delegate: ArrayJsonDocumentDelegate
+  ) {
     super();
     this._uri = uri;
     this._documentData = initialContent;
@@ -157,7 +165,10 @@ export class ArrayJsonDocument extends Disposable implements vscode.CustomDocume
    *
    * These backups are used to implement hot exit.
    */
-  async backup(destination: vscode.Uri, cancellation: vscode.CancellationToken): Promise<vscode.CustomDocumentBackup> {
+  async backup(
+    destination: vscode.Uri,
+    cancellation: vscode.CancellationToken
+  ): Promise<vscode.CustomDocumentBackup> {
     await this.saveAs(destination, cancellation);
 
     return {
