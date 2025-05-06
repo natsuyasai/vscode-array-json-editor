@@ -52,7 +52,7 @@ function App() {
     }
   });
 
-  function handleSave() {
+  function handleApply() {
     vscode.postMessage({
       type: "save",
       payload: JSON.stringify(jsonObject, null, 2),
@@ -70,7 +70,11 @@ function App() {
         jsonObject={jsonObject}
         setJsonObject={updateJsonObject}></EditableTableRoot>
       <VscodeDivider className={styles.divider} />
-      <VscodeButton onClick={handleSave}>Save</VscodeButton>
+      <div className={styles.footer}>
+        <VscodeButton className={styles.applyButton} onClick={handleApply}>
+          Apply
+        </VscodeButton>
+      </div>
     </main>
   );
 }
