@@ -1,5 +1,5 @@
-import { FC, useEffect, useRef, useState } from "react";
-import styles from "./EditTable.module.scss";
+import { FC, useEffect, useState } from "react";
+import styles from "./EditableTableRoot.module.scss";
 import {
   VscodeTable,
   VscodeTableHeaderCell,
@@ -15,7 +15,7 @@ interface Props {
   setJsonObject: (jsonObject: Record<string, any>) => void;
 }
 
-export const EditTable: FC<Props> = ({ jsonObject, setJsonObject }) => {
+export const EditableTableRoot: FC<Props> = ({ jsonObject, setJsonObject }) => {
   const [objects, setObjects] = useState<Record<string, Record<string, string>[]>>({});
   useEffect(() => {
     const dispObject = useJsonToObject(jsonObject);
