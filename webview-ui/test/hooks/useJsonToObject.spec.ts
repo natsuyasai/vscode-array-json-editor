@@ -7,15 +7,27 @@ describe("Jsonオブジェクトから配列要素のkeyとvalueを抽出する"
       array1: [
         { key1_1: "value1_1", key1_2: "value1_2" },
         { key1_1: "value2_1", key1_2: "value2_2" },
-        { key1_1: "value3_1", key1_2: "value3_2" },
+        { key1_1: 1, key1_2: false },
       ],
     });
     expect(objects).toEqual({
-      array1: [
-        { key1_1: "value1_1", key1_2: "value1_2" },
-        { key1_1: "value2_1", key1_2: "value2_2" },
-        { key1_1: "value3_1", key1_2: "value3_2" },
-      ],
+      array1: {
+        type: "array",
+        record: [
+          {
+            key1_1: { type: "string", value: "value1_1" },
+            key1_2: { type: "string", value: "value1_2" },
+          },
+          {
+            key1_1: { type: "string", value: "value2_1" },
+            key1_2: { type: "string", value: "value2_2" },
+          },
+          {
+            key1_1: { type: "number", value: 1 },
+            key1_2: { type: "boolean", value: false },
+          },
+        ],
+      },
     });
   });
 
@@ -24,25 +36,37 @@ describe("Jsonオブジェクトから配列要素のkeyとvalueを抽出する"
       array1: [
         { key1_1: "value1_1", key1_2: "value1_2" },
         { key1_1: "value2_1", key1_2: "value2_2" },
-        { key1_1: "value3_1", key1_2: "value3_2" },
+        { key1_1: 1, key1_2: false },
       ],
-      array2: [
-        { key2_1: "value1_1", key2_2: "value1_2" },
-        { key2_1: "value2_1", key2_2: "value2_2" },
-        { key2_1: "value3_1", key2_2: "value3_2" },
-      ],
+      array2: [{ key2_1: "value1_1", key2_2: "value1_2" }],
     });
     expect(objects).toEqual({
-      array1: [
-        { key1_1: "value1_1", key1_2: "value1_2" },
-        { key1_1: "value2_1", key1_2: "value2_2" },
-        { key1_1: "value3_1", key1_2: "value3_2" },
-      ],
-      array2: [
-        { key2_1: "value1_1", key2_2: "value1_2" },
-        { key2_1: "value2_1", key2_2: "value2_2" },
-        { key2_1: "value3_1", key2_2: "value3_2" },
-      ],
+      array1: {
+        type: "array",
+        record: [
+          {
+            key1_1: { type: "string", value: "value1_1" },
+            key1_2: { type: "string", value: "value1_2" },
+          },
+          {
+            key1_1: { type: "string", value: "value2_1" },
+            key1_2: { type: "string", value: "value2_2" },
+          },
+          {
+            key1_1: { type: "number", value: 1 },
+            key1_2: { type: "boolean", value: false },
+          },
+        ],
+      },
+      array2: {
+        type: "array",
+        record: [
+          {
+            key2_1: { type: "string", value: "value1_1" },
+            key2_2: { type: "string", value: "value1_2" },
+          },
+        ],
+      },
     });
   });
 
@@ -53,31 +77,60 @@ describe("Jsonオブジェクトから配列要素のkeyとvalueを抽出する"
       array1: [
         { key1_1: "value1_1", key1_2: "value1_2" },
         { key1_1: "value2_1", key1_2: "value2_2" },
-        { key1_1: "value3_1", key1_2: "value3_2" },
+        { key1_1: 1, key1_2: false },
       ],
-      key3: "value3",
-      array2: [
-        { key2_1: "value1_1", key2_2: "value1_2" },
-        { key2_1: "value2_1", key2_2: "value2_2" },
-        { key2_1: "value3_1", key2_2: "value3_2" },
-      ],
-      key4: "value4",
+      key3: 3,
+      array2: [{ key2_1: "value1_1", key2_2: "value1_2" }],
+      key4: true,
     });
     expect(objects).toEqual({
-      array1: [
-        { key1_1: "value1_1", key1_2: "value1_2" },
-        { key1_1: "value2_1", key1_2: "value2_2" },
-        { key1_1: "value3_1", key1_2: "value3_2" },
-      ],
-      array2: [
-        { key2_1: "value1_1", key2_2: "value1_2" },
-        { key2_1: "value2_1", key2_2: "value2_2" },
-        { key2_1: "value3_1", key2_2: "value3_2" },
-      ],
-      key1: [{ key1: "value1" }],
-      key2: [{ key2_1: "value2_1", key2_2: "value2_2" }],
-      key3: [{ key3: "value3" }],
-      key4: [{ key4: "value4" }],
+      array1: {
+        type: "array",
+        record: [
+          {
+            key1_1: { type: "string", value: "value1_1" },
+            key1_2: { type: "string", value: "value1_2" },
+          },
+          {
+            key1_1: { type: "string", value: "value2_1" },
+            key1_2: { type: "string", value: "value2_2" },
+          },
+          {
+            key1_1: { type: "number", value: 1 },
+            key1_2: { type: "boolean", value: false },
+          },
+        ],
+      },
+      array2: {
+        type: "array",
+        record: [
+          {
+            key2_1: { type: "string", value: "value1_1" },
+            key2_2: { type: "string", value: "value1_2" },
+          },
+        ],
+      },
+      key1: {
+        type: "string",
+        record: [{ key1: { type: "string", value: "value1" } }],
+      },
+      key2: {
+        type: "object",
+        record: [
+          {
+            key2_1: { type: "string", value: "value2_1" },
+            key2_2: { type: "string", value: "value2_2" },
+          },
+        ],
+      },
+      key3: {
+        type: "number",
+        record: [{ key3: { type: "number", value: 3 } }],
+      },
+      key4: {
+        type: "boolean",
+        record: [{ key4: { type: "boolean", value: true } }],
+      },
     });
   });
 });

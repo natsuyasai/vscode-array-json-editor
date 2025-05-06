@@ -9,23 +9,24 @@ import {
   VscodeTableCell,
   VscodeTextarea,
 } from "@vscode-elements/react-elements";
+import { JsonRecords } from "@/hooks/useJsonToObject";
 
 interface Props {
   tableTitle: string;
-  tableItems: Record<string, any>[];
-  setTableItems: (jsonObject: Record<string, any>[]) => void;
+  tableItems: JsonRecords;
+  setTableItems: (jsonObject: JsonRecords) => void;
 }
 
 export const EditableTable: FC<Props> = ({ tableTitle, tableItems, setTableItems }) => {
   function handleInput(event: Event) {
     console.log(event);
   }
-  function handleUpdated(event: Event, rowIndex: number, cellIndex: number) {
+  function handleUpdated(event: Event, rowIndex: number, cellKey: string) {
     const target = event.target as HTMLTextAreaElement;
     const newValue = target.value;
-    const updatedTableItems = [...tableItems];
-    updatedTableItems[rowIndex][cellIndex] = newValue;
-    setTableItems(updatedTableItems);
+    const updatedTableItems = [...tableItems.record];
+    updatedTableItems[rowIndex][cellKey].value = newValue;
+    setTableItems({ type: tableItems.type, record: updatedTableItems });
   }
 
   return (
@@ -35,7 +36,7 @@ export const EditableTable: FC<Props> = ({ tableTitle, tableItems, setTableItems
         <div className={styles.tableRoot}>
           <VscodeTable zebra bordered-rows resizable>
             <VscodeTableHeader slot="header">
-              {Object.keys(tableItems[0]).map((headerKey) => {
+              {Object.keys(tableItems.record[0]).map((headerKey) => {
                 return (
                   <VscodeTableHeaderCell key={headerKey} className={styles.cell}>
                     {headerKey}
@@ -44,17 +45,17 @@ export const EditableTable: FC<Props> = ({ tableTitle, tableItems, setTableItems
               })}
             </VscodeTableHeader>
             <VscodeTableBody slot="body">
-              {tableItems.map((row, rowIndex) => (
+              {tableItems.record.map((row, rowIndex) => (
                 <VscodeTableRow key={rowIndex}>
-                  {Object.values(row).map((cell, cellIndex) => (
+                  {Object.keys(row).map((cellKey, cellIndex) => (
                     <VscodeTableCell key={cellIndex} className={styles.cell}>
                       <VscodeTextarea
                         className={styles.textArea}
                         resize="both"
-                        value={cell}
+                        value={row[cellKey].value?.toString()}
                         onInput={handleInput}
                         onChange={(e) => {
-                          handleUpdated(e, rowIndex, cellIndex);
+                          handleUpdated(e, rowIndex, cellKey);
                         }}></VscodeTextarea>
                     </VscodeTableCell>
                   ))}

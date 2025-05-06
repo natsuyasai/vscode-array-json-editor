@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from "react";
 import styles from "./EditableTableRoot.module.scss";
-import { useJsonToObject } from "@/hooks/useJsonToObject";
+import { JsonRecords, useJsonToObject } from "@/hooks/useJsonToObject";
 import { EditableTable } from "./EditableTable";
 
 interface Props {
@@ -9,23 +9,27 @@ interface Props {
 }
 
 export const EditableTableRoot: FC<Props> = ({ jsonObject, setJsonObject }) => {
-  const [displayObjects, setDisplayObjects] = useState<Record<string, Record<string, string>[]>>(
-    {}
-  );
+  const [displayObjects, setDisplayObjects] = useState<Record<string, JsonRecords>>({});
   useEffect(() => {
     const dispObject = useJsonToObject(jsonObject);
     setDisplayObjects(dispObject);
   }, [jsonObject]);
 
-  function setTableItems(tableItems: Record<string, any>[], key: string) {
-    const newObjects = { ...displayObjects };
-    newObjects[key] = tableItems;
-    setDisplayObjects(newObjects);
+  function setTableItems(tableItems: JsonRecords, key: string) {
+    const newDisplayObjects = { ...displayObjects };
+    newDisplayObjects[key] = tableItems;
+    setDisplayObjects(newDisplayObjects);
     const newJsonObject = { ...jsonObject };
-    newJsonObject[key] = tableItems;
-    console.log("oldJsonObject", jsonObject);
-    console.log("newJsonObject", newJsonObject);
-    // setJsonObject(newJsonObject);
+    newJsonObject[key] = tableItems.record.map((item) => {
+      const newItem: Record<string, any> = {};
+      Object.keys(item).forEach((itemKey) => {
+        newItem[itemKey] = item[itemKey].value;
+      });
+      return newItem;
+    });
+    console.log(jsonObject);
+    console.log(newJsonObject);
+    setJsonObject(newJsonObject);
   }
   return (
     <>
