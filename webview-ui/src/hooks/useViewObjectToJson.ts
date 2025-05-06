@@ -1,4 +1,4 @@
-import { JsonRecords } from "./useJsonToViewObject";
+import { JsonObject, JsonRecords, JsonType, JsonValueType } from "./useJsonToViewObject";
 
 export function useViewObjectToJson(
   srcJsonObject: Record<string, any>,
@@ -12,7 +12,7 @@ export function useViewObjectToJson(
       newJsonObject[targetKey] = tableItems.record.map((item) => {
         const newItem: Record<string, any> = {};
         Object.keys(item).forEach((itemKey) => {
-          newItem[itemKey] = item[itemKey].value;
+          newItem[itemKey] = convertValue(item[itemKey].value, item[itemKey].type);
         });
         return newItem;
       });
@@ -20,7 +20,7 @@ export function useViewObjectToJson(
       newJsonObject[targetKey] = tableItems.record.map((item) => {
         const newItem: Record<string, any> = {};
         Object.keys(item).forEach((itemKey) => {
-          newItem[itemKey] = item[itemKey].value;
+          newItem[itemKey] = convertValue(item[itemKey].value, item[itemKey].type);
         });
         return newItem;
       })[0];
@@ -28,12 +28,27 @@ export function useViewObjectToJson(
       newJsonObject[targetKey] = tableItems.record.map((item) => {
         let newItem = null;
         Object.keys(item).forEach((itemKey) => {
-          newItem = item[itemKey].value;
+          newItem = convertValue(item[itemKey].value, item[itemKey].type);
         });
         return newItem;
       })[0];
     }
     jsonObject = newJsonObject;
+  }
+
+  function convertValue(value: JsonValueType, type: JsonType) {
+    switch (type) {
+      case "string":
+        return value;
+      case "number":
+        return Number(value);
+      case "boolean":
+        return Boolean(value);
+      case "bigint":
+        return BigInt(value as string);
+      default:
+        return value?.toString() || null;
+    }
   }
 
   createJsonObject();

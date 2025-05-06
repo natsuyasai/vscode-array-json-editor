@@ -1,6 +1,16 @@
+export type JsonType =
+  | "string"
+  | "number"
+  | "bigint"
+  | "boolean"
+  | "symbol"
+  | "undefined"
+  | "object"
+  | "function";
+export type JsonValueType = string | number | boolean | null | object | Function;
 export interface JsonObject {
-  type: "string" | "number" | "bigint" | "boolean" | "symbol" | "undefined" | "object" | "function";
-  value: string | number | boolean | null | object;
+  type: JsonType;
+  value: JsonValueType;
 }
 export interface JsonRecords {
   type:
