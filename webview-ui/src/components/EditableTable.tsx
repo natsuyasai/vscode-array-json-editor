@@ -36,7 +36,7 @@ export const EditableTable: FC<Props> = ({ tableTitle, tableItems, setTableItems
         <div className={styles.tableRoot}>
           <VscodeTable zebra bordered-rows resizable>
             <VscodeTableHeader slot="header">
-              {Object.keys(tableItems.record[0]).map((headerKey) => {
+              {Object.keys(tableItems.record?.[0] ?? []).map((headerKey) => {
                 return (
                   <VscodeTableHeaderCell
                     key={headerKey}
