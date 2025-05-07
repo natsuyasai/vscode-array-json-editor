@@ -25,10 +25,6 @@
     ],
     "commands": [
       {
-        "command": "array-json-editor.helloWorld",
-        "title": "Hello World"
-      },
-      {
         "command": "array-json-editor.openEditor",
         "title": "Open Array JSON Editor"
       }
